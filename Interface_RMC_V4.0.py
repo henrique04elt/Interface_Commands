@@ -175,13 +175,17 @@ class CommandInterface:
         try:
             port = int(port)
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                print(f"Conectando a {ip}:{port}")
-                s.connect((ip, port))
+                s.bind((ip, port))
+                s.listen(1)
+                conn, addr = s.accept()
+                print('Connection address:', addr)
+                # print(f"Conectando a {ip}:{port}")
+                # s.connect((ip, port))
                 print(f"Enviando comando: {command}")
-                s.sendall(bytes.fromhex(command))
+                conn.sendall(bytes.fromhex(command))
                 print(f"Comando enviado: {command}")
-                data = s.recv(2048)
-                print(f"Resposta recebida: {data.hex()}")
+                data = conn.recv(2048)
+                # print(f"Resposta recebida: {data.hex()}")
                 self.ack_text.delete("1.0", tk.END)
                 self.ack_text.insert(tk.END, data.hex())
         except ValueError as e:
