@@ -1,12 +1,14 @@
 ## Programa para geração de código para Schedule de Brilho         ##
 ## Henrique Rosa & Henrique Romera                                 ##
-## Data : 14/06/2024                                               ##
+## Data : 17/06/2024                                               ##
 ## Schedule_RMC_V2                                                 ##
-## V2:                                                             ##
+## V2.1:                                                             ##
 ## Função send_tcp_schedule: envia um comando via socket para      ##
 ## definir um schedule de brilho, desabilitando o backlight        ##
 ## automático e ativando o schedule                                ##
 ## Função criar_comando_schedule: chama a função send_tcp_schedule ##
+## V2.1:                                                                     ##
+## Tradução de itens para PT-BR                                              ##
 
 import tkinter as tk
 from datetime import datetime, time
@@ -112,23 +114,24 @@ def criar_janela():
     global campo_comando
 
     janela = tk.Tk()
-    janela.title("Configuração da Schedule")
+    janela.title("Configuração da Schedule de Brilho")
 
     horarios_entries = []
     percentagens_entries = []
 
     for i in range(5):
-        tk.Label(janela, text=f"{i+1}º horário:").grid(row=i, column=0, padx=5, pady=5)
+        tk.Label(janela, text=f"{i+1}º horário: (hh:mm)").grid(row=i, column=0, padx=5, pady=5)
         horario_entry = tk.Entry(janela)
         horario_entry.grid(row=i, column=1, padx=5, pady=5)
         horarios_entries.append(horario_entry)
 
         tk.Label(janela, text="Porcentagem:").grid(row=i, column=2, padx=5, pady=5)
+        tk.Label(janela, text="%").grid(row=i, column=4, padx=5, pady=5)
         percentagem_entry = tk.Entry(janela)
         percentagem_entry.grid(row=i, column=3, padx=5, pady=5)
         percentagens_entries.append(percentagem_entry)
 
-    botao_criar_comando = tk.Button(janela, text="Criar Comando Schedule", command=criar_comando_schedule)
+    botao_criar_comando = tk.Button(janela, text="Enviar Schedule", command=criar_comando_schedule)
     botao_criar_comando.grid(row=5, columnspan=4, pady=10)
 
     tk.Label(janela, text="Comando Gerado:").grid(row=6, column=0, padx=5, pady=5)
