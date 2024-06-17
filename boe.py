@@ -103,8 +103,7 @@ comandos = {
             # },
         }
     },
-
-     "Input Signal Status": {
+    "Input Signal Status": {
         "Reading": {
             "Tela 1": {
                 "Send Data": "FF 55 04 57 01 01 00 b1",
@@ -206,7 +205,6 @@ comandos = {
             },
         }
     },
-
     'Relay': {
         'Setting': {
             'Relay - 0 OFF': {
@@ -261,3 +259,45 @@ comandos = {
     }
 }
 
+brilho = {
+    10: {
+        "Send Data": "ff 55 04 66 01 01 0a ca",
+        "ACK": "ff 55 04 66 00 00 00 be"
+    },
+    20: {
+        "Send Data": "ff 55 04 66 01 01 14 d4",
+        "ACK": "ff 55 04 66 00 00 00 be"
+    },
+    30: {
+        "Send Data": "ff 55 04 66 01 01 1e de",
+        "ACK": "ff 55 04 66 00 00 00 be"
+    },
+    40: {
+        "Send Data": "ff 55 04 66 01 01 28 e8",
+        "ACK": "ff 55 04 66 00 00 00 be"
+    },
+    50: {
+        "Send Data": "ff 55 04 66 01 01 32 f2",
+        "ACK": "ff 55 04 66 00 00 00 be"
+    },
+    60: {
+        "Send Data": "ff 55 04 66 01 01 3c fc",
+        "ACK": "ff 55 04 66 00 00 00 be"
+    },
+    70: {
+        "Send Data": "ff 55 04 66 01 01 46 06",
+        "ACK": "ff 55 04 66 00 00 00 be"
+    },
+    80: {
+        "Send Data": "ff 55 04 66 01 01 50 10",
+        "ACK": "ff 55 04 66 00 00 00 be"
+    },
+    90: {
+        "Send Data": "ff 55 04 66 01 01 5a 1a",
+        "ACK": "ff 55 04 66 00 00 00 be"
+    },
+    100: {
+        "Send Data": "ff 55 04 66 01 01 64 24",
+        "ACK": "ff 55 04 66 00 00 00 be"
+    },
+}
