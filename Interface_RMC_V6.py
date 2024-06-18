@@ -121,12 +121,12 @@ class CommandInterface:
         self.ack_text.delete("1.0", tk.END)
         self.ack_text.insert(tk.END, ack)
 
+    def abrir_janela_schedule(self):
+        criar_janela()
+
     def show_setting_commands(self):
         self.command_type_label.config(text="Tipo de Comando: Configuração")
         self.populate_commands('Setting')
-
-    def abrir_janela_schedule(self):
-        criar_janela()
 
     def show_reading_commands(self):
         self.command_type_label.config(text="Tipo de Comando: Leitura")

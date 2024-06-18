@@ -23,7 +23,7 @@ def obter_valor_hex(valor):
     else:
         return format(int(valor), '02x')
 
-def send_tcp_schedule(num):
+def send_tcp_brilho(num):
     global send_data_value
     ip = config.ip_entry.get()
     port = config.port_entry.get()
@@ -41,7 +41,7 @@ def send_tcp_schedule(num):
             # print(f"Conectando a {ip}:{port}")
             # s.connect((ip, port))
 
-            if num == 0:
+            if num == 0: #comandos schedule
                 print(config.comando)
                 comando_bl = "ff 55 04 21 01 02 00 7c"
                 conn.sendall(bytes.fromhex(comando_bl))
@@ -53,7 +53,8 @@ def send_tcp_schedule(num):
                 time.sleep(1)
                 conn.sendall(bytes.fromhex(config.comando))
                 print(f"Comando enviado: {config.comando}")
-            elif num == 1:
+            elif num == 1: #comandos brilho
+                print(send_data_value)
                 conn.sendall(bytes.fromhex(send_data_value))
                 print(f"Comando enviado: {send_data_value}")
 
@@ -81,7 +82,7 @@ def criar_comando_schedule():
         checksum = obter_checksum(config.comando)
         config.comando += f" {checksum}"
 
-        send_tcp_schedule(0)
+        send_tcp_brilho(0)
 
         campo_comando.config(state=tk.NORMAL)
         campo_comando.delete(1.0, tk.END)
@@ -89,7 +90,7 @@ def criar_comando_schedule():
         campo_comando.config(state=tk.DISABLED)
 
 def criar_comando_brilho():
-    send_tcp_schedule(1)
+    send_tcp_brilho(1)
 
 def obter_checksum(comando):
     valores = [int(valor, 16) for valor in comando.split()]
@@ -117,17 +118,21 @@ def obter_valores_inseridos():
 
 def update_label(value):
     global send_data_value
+    """Função para atualizar o texto do label com o valor do slider e 'Send Data' do dicionário baseado no slider."""
     value = int(float(value))  # Converte o valor do slider para inteiro
-    send_data_value = brilho.get(value, {}).get("Send Data", "Valor Desconhecido Send")
-    label.config(text=f"Valor do Slider: {value}, Send Data: {send_data_value}")
-    #print(send_data_value)
+    tela = selected_tela.get()  # Obtém a tela selecionada no OptionMenu
+    send_data_value = brilho.get(tela, {}).get(value, {}).get("Send Data", "Valor Desconhecido")
+    label.config(text=f"Tela: {tela}, Valor do Slider: {value}, Send Data: {send_data_value}")
+    print(tela)
+    print(send_data_value)
 
 def criar_janela():
-    global label
+    global label, selected_tela
     global horarios_entries
     global percentagens_entries
     global campo_comando
-
+    global send_data_value
+    send_data_value = "ff 55 04 66 01 01 0a ca"
     janela = tk.Tk()
     janela.title("Configuração de Brilho")
 
@@ -139,8 +144,6 @@ def criar_janela():
     percentagens_entries = []
 
     tk.Label(janela, text="Schedule").grid(row=0, column=0, columnspan=4, pady=(0, 20))
-    # schedule_frame = ttk.LabelFrame(janela, text="Schedule", padding=10, style="Rounded.TFrame", height=100)
-    # schedule_frame.grid(row=0, column=0, columnspan=5, rowspan=9, padx=0, pady=0, sticky="n")
 
     for i in range(5):
         tk.Label(janela, text=f"{i+1}º horário: (hh:mm)").grid(row=i+1, column=0, padx=0, pady=5)
@@ -167,9 +170,24 @@ def criar_janela():
 
     tk.Label(janela, text="Brilho").grid(row=8, column=0, columnspan=4, pady=(30, 0))
 
+    frame = tk.Frame(janela)
+    frame.grid(row=10, column=1, padx=20, pady=20)
+
+    selected_tela = tk.StringVar(janela, value="Tela 1")
+    option_menu = ttk.OptionMenu(
+         frame,
+         selected_tela,
+         "Tela 1",
+         *brilho.keys(),
+         command=lambda _: update_label(slider.get())
+         )
+    option_menu.grid(row=10, column=1, pady=20)
+    tk.Label(janela, text="Tela:").grid(row=10, column=0, columnspan=2, padx=(0, 30))
+    print(*brilho.keys())
+
     slider = tk.Scale(janela, from_=10, to=100, orient="horizontal", command=update_label, length=600, tickinterval=10, resolution=10)
     slider.grid(row=9, column=0, columnspan=4, padx=0, pady=10)
-    label = tk.Label(janela, text="Valor do Slider: 10, Send Data: ff 55 04 66 01 01 0a ca")
+    label = tk.Label(janela, text="Tela: Tela 1, Valor do Slider: 10, Send Data: ff 55 04 66 01 01 0a ca")
     label.grid(column=0, columnspan=4, padx=20, pady=20)
 
     janela.mainloop()
