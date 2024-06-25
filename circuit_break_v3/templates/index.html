@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dados do Circuit Breaker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 50%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .container {
+            text-align: center;
+        }
+        .btn-container {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+        }
+        button {
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 10px;
+            width: 120px;
+        }
+        .status {
+            font-size: 18px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dados do Circuit Breaker</h1>
+    <table>
+        <tr>
+            <th>Parâmetro</th>
+            <th>Valor</th>
+        </tr>
+        <tr>
+            <td>Frequência (Hz)</td>
+            <td id="frequency"></td>
+        </tr>
+        <tr>
+            <td>Tensão (V)</td>
+            <td id="voltage"></td>
+        </tr>
+        <tr>
+            <td>Corrente (A)</td>
+            <td id="current"></td>
+        </tr>
+        <tr>
+            <td>Potência (W)</td>
+            <td id="power"></td>
+        </tr>
+        <tr>
+            <td>Fator de Potência</td>
+            <td id="power_factor"></td>
+        </tr>
+        <tr>
+            <td>Temperatura (°C)</td>
+            <td id="temperature"></td>
+        </tr>
+        <tr>
+            <td>Estado do Circuit Breaker</td>
+            <td id="cb_state"></td>
+        </tr>
+    </table>
+
+    <div class="container">
+        <div class="btn-container">
+            <button onclick="sendCommand('on')">Abrir</button>
+            <button onclick="sendCommand('off')">Fechar</button>
+        </div>
+        <div class="status" id="status"></div>
+    </div>
+
+    <script>
+        async function fetchData() {
+            const response = await fetch('/data');
+            const data = await response.json();
+
+            document.getElementById('frequency').textContent = data.frequency;
+            document.getElementById('voltage').textContent = data.voltage;
+            document.getElementById('current').textContent = data.current;
+            document.getElementById('power').textContent = data.power;
+            document.getElementById('power_factor').textContent = data.power_factor;
+            document.getElementById('temperature').textContent = data.temperature;
+            document.getElementById('cb_state').textContent = data.cb_state;
+        }
+
+        async function sendCommand(action) {
+            const response = await fetch('/control', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ action: action })
+            });
+
+            const result = await response.json();
+            const statusDiv = document.getElementById('status');
+            if (response.ok) {
+                statusDiv.textContent = `Ação ${action} enviada com sucesso!`;
+            } else {
+                statusDiv.textContent = `Erro ao enviar ação ${action}: ${result.status}`;
+            }
+        }
+
+        setInterval(fetchData, 1000); // Atualiza os dados a cada segundo
+    </script>
+</body>
+</html>
