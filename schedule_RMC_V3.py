@@ -58,7 +58,6 @@ def send_tcp_brilho(num):
                 conn.sendall(bytes.fromhex(send_data_value))
                 print(f"Comando enviado: {send_data_value}")
 
-
             data=conn.recv(2048)
             print(f"Resposta recebida: {data.hex()}")
     except ValueError as e:
@@ -67,6 +66,8 @@ def send_tcp_brilho(num):
         print(f"Erro de socket: {e}")
     except Exception as e:
         print(f"Erro inesperado: {e}")
+
+
 
 def criar_comando_schedule():
     global campo_comando

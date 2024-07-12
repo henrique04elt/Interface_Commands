@@ -13,7 +13,7 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 import socket
 import boe
-from schedule_RMC_V2 import criar_janela
+from schedule_RMC_V3 import criar_janela
 import config
 
 class CommandInterface:
