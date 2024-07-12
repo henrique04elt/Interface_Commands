@@ -2,13 +2,13 @@
 ## Henrique Rosa & Henrique Romera                                 ##
 ## Data : 17/06/2024                                               ##
 ## Schedule_RMC_V2                                                 ##
-## V2.1:                                                             ##
+## V2.1:                                                           ##
 ## Função send_tcp_schedule: envia um comando via socket para      ##
 ## definir um schedule de brilho, desabilitando o backlight        ##
 ## automático e ativando o schedule                                ##
 ## Função criar_comando_schedule: chama a função send_tcp_schedule ##
-## V2.1:                                                                     ##
-## Tradução de itens para PT-BR                                              ##
+## V2.1:                                                           ##
+## Tradução de itens para PT-BR                                    ##
 
 import tkinter as tk
 from datetime import datetime, time

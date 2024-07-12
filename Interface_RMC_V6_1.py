@@ -1,19 +1,18 @@
 ## Programa para controle e testes da RMC com interface gráfica              ##
 ## Henrique Rosa & Henrique Romera                                           ##
 ## Data : 17/06/2024                                                         ##
-## Interface_RMC_V5.1                                                        ##
-## V5.0:                                                                     ##
-## Função __init__: alteração das variáveis de ip e porta do socket          ##
-## Função send_tcp_command: alteração em comandos de socket de s. para conn. ##
-## V5.1:                                                                     ##
-## Tradução de itens para PT-BR                                              ##
+## Interface_RMC_V6.0                                                        ##
+## V6.0:                                                                     ##
+
 
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
 import socket
 import boe
-from schedule_RMC_V3 import criar_janela
+import threading
+import time
+from schedule_RMC_V4 import criar_janela
 import config
 
 class CommandInterface:
@@ -78,11 +77,23 @@ class CommandInterface:
         self.relay_frame = ttk.LabelFrame(master, text="Controle de Relay", padding=10, style="Rounded.TFrame")
         self.relay_frame.grid(row=0, column=2, padx=10, pady=10, sticky="ne")
 
-        self.schedule_button = ttk.Button(master, text="Configurar Schedule", command=self.abrir_janela_schedule)
+        self.schedule_button = ttk.Button(master, text="Configurar Brilho", command=self.abrir_janela_schedule)
         self.schedule_button.grid(row=0, column=0, columnspan=1, pady=10)
 
         self.create_relay_buttons()
         self.relay_status = {i: "OFF" for i in range(6)}
+
+        # actions = [
+        #     (lambda: print("Botão 1 - Ação 1 executada"), lambda: print("Botão 1 - Ação 2 executada")),
+        #     (lambda: print("Botão 2 - Ação 1 executada"), lambda: print("Botão 2 - Ação 2 executada")),
+        #     (lambda: print("Botão 3 - Ação 1 executada"), lambda: print("Botão 3 - Ação 2 executada")),
+        #     (lambda: print("Botão 4 - Ação 1 executada"), lambda: print("Botão 4 - Ação 2 executada")),
+        #     (lambda: print("Botão 5 - Ação 1 executada"), lambda: print("Botão 5 - Ação 2 executada")),
+        #     (lambda: print("Botão 6 - Ação 1 executada"), lambda: print("Botão 6 - Ação 2 executada")),
+        # ]
+        #
+        # for i, (action1, action2) in enumerate(actions):
+        #     self.create_button(f"Executar Ação {i + 1}", action1, action2, i)
 
         self.ip_label = ttk.Label(master, text="IP Address:")
         self.ip_label.grid(row=4, column=0, padx=10, pady=5, sticky="e")
@@ -98,6 +109,36 @@ class CommandInterface:
 
         self.send_button = ttk.Button(master, text="Enviar Comando", command=self.send_tcp_command)
         self.send_button.grid(row=6, column=0, columnspan=2, pady=10, padx=10)
+
+        self.get_button = ttk.Button(master, text="Get Data", command=self.get_data)
+        self.get_button.grid(row=6, column=1, columnspan=2, pady=10, padx=10)
+        # self.get_button.bind('<<ComboboxSelected>>', self.update_display)
+
+        version_rmc = bytes.fromhex("20")
+        version_fan = bytes.fromhex("20")
+        ad_1 = bytes.fromhex("20")
+        ad_2 = bytes.fromhex("20")
+        self.get_data()
+
+        self.version_RMC = ttk.Label(master, text="Versão RMC:", width=15)
+        self.version_RMC.grid(row=4, column=1, padx=10, pady=5, sticky="e")
+        self.version_RMC = ttk.Label(master, text= self.convert_to_ascii(version_rmc), width=15)
+        self.version_RMC.grid(row=4, column=2, padx=10, pady=5, sticky="w")
+
+        self.version_FAN = ttk.Label(master, text="Versão FAN:", width=15)
+        self.version_FAN.grid(row=4, column=3, padx=10, pady=5, sticky="e")
+        self.version_FAN = ttk.Label(master, text= self.convert_to_ascii(version_fan), width=15)
+        self.version_FAN.grid(row=4, column=4, padx=10, pady=5, sticky="w")
+
+        self.version_AD1 = ttk.Label(master, text="Versão AD1:", width=15)
+        self.version_AD1.grid(row=5, column=1, padx=10, pady=5, sticky="e")
+        self.version_AD1 = ttk.Label(master, text= self.convert_to_ascii(ad_1), width=15)
+        self.version_AD1.grid(row=5, column=2, padx=10, pady=5, sticky="w")
+
+        self.version_AD2 = ttk.Label(master, text="Versão AD2:", width=15)
+        self.version_AD2.grid(row=5, column=3, padx=10, pady=5, sticky="e")
+        self.version_AD2 = ttk.Label(master, text= self.convert_to_ascii(ad_2), width=15)
+        self.version_AD2.grid(row=5, column=4, padx=10, pady=5, sticky="w")
 
     def create_relay_buttons(self):
         for i in range(6):
@@ -121,12 +162,33 @@ class CommandInterface:
         self.ack_text.delete("1.0", tk.END)
         self.ack_text.insert(tk.END, ack)
 
-    def show_setting_commands(self):
-        self.command_type_label.config(text="Tipo de Comando: Configuração")
-        self.populate_commands('Setting')
+    # def toggle_button(self, btn, action1, action2):
+    #     global btn_status
+    #     print(btn_status)
+    #     """Função para alternar o estado do botão."""
+    #     if btn_status == 0:
+    #         action1()
+    #         btn_status = 1
+    #         btn.config(text="Executar Ação 2", bg="blue", state="normal")
+    #     else:
+    #         action2()
+    #         btn_status = 0
+    #         btn.config(text="Executar Ação 1", bg="red", state="normal")
+    #
+    # def create_button(self, text, action1, action2, row):
+    #     global btn_status
+    #     """Função para criar um botão com ação de alternância."""
+    #     btn = tk.Button(self.relay_frame, text=text, bg="red", command=lambda: self.toggle_button(btn, action1, action2))
+    #     btn.grid(row=row, column=0, padx=10, pady=5, sticky='ew')
+    #     btn_status = 0  # Atributo personalizado para rastrear o estado
+    #     return btn
 
     def abrir_janela_schedule(self):
         criar_janela()
+
+    def show_setting_commands(self):
+        self.command_type_label.config(text="Tipo de Comando: Configuração")
+        self.populate_commands('Setting')
 
     def show_reading_commands(self):
         self.command_type_label.config(text="Tipo de Comando: Leitura")
@@ -174,8 +236,51 @@ class CommandInterface:
         self.ack_text.delete("1.0", tk.END)
         self.ack_text.insert(tk.END, ack)
 
+    def process_hex_data(self, data):
+        headers = [
+            ("a1a2a3200011", [6, 5, 5]),  # Header, Lixo, version_rmc
+            ("a1a2a3200013", [6, 9, 13]),  # Header, Lixo, version_fan
+            ("a1a2a31b0014", [6, 4, 5, 4])  # Header, ad_1, Lixo, ad_2
+        ]
+
+        result = []
+
+        # Converting hex string to bytes
+        data_bytes = bytes.fromhex(data.hex())
+
+        i = 0
+        while i < len(data_bytes):
+            matched = False
+            for header, sizes in headers:
+                header_bytes = bytes.fromhex(header)
+                header_length = len(header_bytes)
+                if data_bytes[i:i + header_length] == header_bytes:
+                    total_length = sum(sizes)
+                    if i + total_length <= len(data_bytes):
+                        packets = self.divide_into_packets(data_bytes[i:i + total_length], sizes)
+                        result.append((header, packets))
+                        i += total_length  # Move index past the captured bytes
+                    else:
+                        i += 1  # Move to the next byte if not enough bytes left
+                    matched = True
+                    break
+            if not matched:
+                i += 1  # Move to the next byte if no header matched
+
+        return result
+
+    def divide_into_packets(self, packet, sizes):
+        packets = []
+        index = 0
+        for size in sizes:
+            packets.append(packet[index:index + size])
+            index += size
+        return packets
+
+    def convert_to_ascii(self, bytes_seq):
+        return ''.join(chr(b) for b in bytes_seq)
+
     def send_tcp_command(self):
-        # global comando
         ip = config.ip_entry.get()
         port = config.port_entry.get()
         command = self.code_text.get("1.0", tk.END).strip()
@@ -189,11 +294,8 @@ class CommandInterface:
                 s.listen(1)
                 conn, addr = s.accept()
                 print('Connection address:', addr)
-                # print(f"Conectando a {ip}:{port}")
-                # s.connect((ip, port))
                 print(f"Enviando comando: {command}")
                 conn.sendall(bytes.fromhex(command))
-                print(f"Comando enviado: {command}")
                 data = conn.recv(2048)
                 print(f"Resposta recebida: {data.hex()}")
                 self.ack_text.delete("1.0", tk.END)
@@ -205,7 +307,69 @@ class CommandInterface:
         except Exception as e:
             print(f"Erro inesperado: {e}")
 
+
+    def get_data(self):
+        global version_rmc, version_fan, ad_1, ad_2
+        ip = config.ip_entry.get()
+        port = config.port_entry.get()
+        if not ip or not port:
+            print("IP, Porta ou Comando não fornecido.")
+            return
+        try:
+            port = int(port)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind((ip, port))
+                s.listen(1)
+                conn, addr = s.accept()
+                i1, i2, i3 = 0, 0, 0
+                timeout = 5  # Timeout em segundos
+                start_time = time.time()
+                while 1:
+                    data = conn.recv(2048)
+                    print(f"Resposta recebida: {data.hex()}")
+                    result = self.process_hex_data(data)
+                    for header, packets in result:
+                        if header == "a1a2a3200011":
+                            header, lixo, version_rmc = packets
+                            print("header:", header.hex())
+                            print("version_rmc:", self.convert_to_ascii(version_rmc))
+                            self.version_RMC.config(text=self.convert_to_ascii(version_rmc))
+                            i1 = 1
+                        elif header == "a1a2a3200013":
+                            header, lixo, version_fan = packets
+                            print("header:", header.hex())
+                            print("version_fan:", self.convert_to_ascii(version_fan))
+                            self.version_FAN.config(text=self.convert_to_ascii(version_fan))
+                            i2 = 1
+                        elif header == "a1a2a31b0014":
+                            header, ad_1, lixo, ad_2 = packets
+                            print("header:", header.hex())
+                            print("ad_1:", self.convert_to_ascii(ad_1))
+                            print("ad_2:", self.convert_to_ascii(ad_2))
+                            self.version_AD1.config(text=self.convert_to_ascii(ad_1))
+                            self.version_AD2.config(text=self.convert_to_ascii(ad_2))
+                            i3 = 1
+                        print()
+                    if i1 == 1 and i2 == 1 and i3 == 1:
+                        break
+                    if time.time() - start_time > timeout:
+                        print("Timeout atingido.")
+                        break
+                self.ack_text.delete("1.0", tk.END)
+                self.ack_text.insert(tk.END, data.hex())
+        except ValueError as e:
+            print(f"Erro de conversão do comando: {e}")
+        except socket.error as e:
+            print(f"Erro de socket: {e}")
+        except Exception as e:
+            print(f"Erro inesperado: {e}")
+
+
+
+
 if __name__ == "__main__":
     root = tk.Tk()
     command_interface = CommandInterface(root)
     root.mainloop()
+
+
