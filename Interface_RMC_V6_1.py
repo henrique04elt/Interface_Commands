@@ -14,11 +14,12 @@ import threading
 import time
 from schedule_RMC_V4 import criar_janela
 import config
+import webbrowser
 
 class CommandInterface:
     def __init__(self, master):
         self.master = master
-        master.title("Interface de Comandos BOE")
+        master.title("Interface de Comandos BOE V6.1")
         master.geometry("1260x700")
 
         # Configure estilos e layouts
@@ -80,26 +81,19 @@ class CommandInterface:
         self.schedule_button = ttk.Button(master, text="Configurar Brilho", command=self.abrir_janela_schedule)
         self.schedule_button.grid(row=0, column=0, columnspan=1, pady=10)
 
+        self.web_button = ttk.Button(master, text="Web Browser", command=self.webbrowser)
+        self.web_button.grid(row=0, column=1, columnspan=1, pady=140, padx=0)
+
         self.create_relay_buttons()
         self.relay_status = {i: "OFF" for i in range(6)}
 
-        # actions = [
-        #     (lambda: print("Botão 1 - Ação 1 executada"), lambda: print("Botão 1 - Ação 2 executada")),
-        #     (lambda: print("Botão 2 - Ação 1 executada"), lambda: print("Botão 2 - Ação 2 executada")),
-        #     (lambda: print("Botão 3 - Ação 1 executada"), lambda: print("Botão 3 - Ação 2 executada")),
-        #     (lambda: print("Botão 4 - Ação 1 executada"), lambda: print("Botão 4 - Ação 2 executada")),
-        #     (lambda: print("Botão 5 - Ação 1 executada"), lambda: print("Botão 5 - Ação 2 executada")),
-        #     (lambda: print("Botão 6 - Ação 1 executada"), lambda: print("Botão 6 - Ação 2 executada")),
-        # ]
-        #
-        # for i, (action1, action2) in enumerate(actions):
-        #     self.create_button(f"Executar Ação {i + 1}", action1, action2, i)
+        ip_address = self.get_ip_address()
 
         self.ip_label = ttk.Label(master, text="IP Address:")
         self.ip_label.grid(row=4, column=0, padx=10, pady=5, sticky="e")
         config.ip_entry = ttk.Entry(master, width=15)
         config.ip_entry.grid(row=4, column=1, padx=10, pady=5, sticky="w")
-        config.ip_entry.insert(0, "192.168.1.170")
+        config.ip_entry.insert(0, ip_address)
 
         self.port_label = ttk.Label(master, text="Port:")
         self.port_label.grid(row=5, column=0, padx=10, pady=5, sticky="e")
@@ -112,33 +106,31 @@ class CommandInterface:
 
         self.get_button = ttk.Button(master, text="Get Data", command=self.get_data)
         self.get_button.grid(row=6, column=1, columnspan=2, pady=10, padx=10)
-        # self.get_button.bind('<<ComboboxSelected>>', self.update_display)
 
         version_rmc = bytes.fromhex("20")
         version_fan = bytes.fromhex("20")
         ad_1 = bytes.fromhex("20")
         ad_2 = bytes.fromhex("20")
-        self.get_data()
 
         self.version_RMC = ttk.Label(master, text="Versão RMC:", width=15)
-        self.version_RMC.grid(row=4, column=1, padx=10, pady=5, sticky="e")
-        self.version_RMC = ttk.Label(master, text= self.convert_to_ascii(version_rmc), width=15)
-        self.version_RMC.grid(row=4, column=2, padx=10, pady=5, sticky="w")
+        self.version_RMC.grid(row=4, column=1, padx=0, pady=5, sticky="e")
+        self.version_RMC = ttk.Label(master, text=self.convert_to_ascii(version_rmc), width=15)
+        self.version_RMC.grid(row=4, column=2, padx=0, pady=5, sticky="w")
 
         self.version_FAN = ttk.Label(master, text="Versão FAN:", width=15)
-        self.version_FAN.grid(row=4, column=3, padx=10, pady=5, sticky="e")
-        self.version_FAN = ttk.Label(master, text= self.convert_to_ascii(version_fan), width=15)
-        self.version_FAN.grid(row=4, column=4, padx=10, pady=5, sticky="w")
+        self.version_FAN.grid(row=5, column=1, padx=0, pady=5, sticky="e")
+        self.version_FAN = ttk.Label(master, text=self.convert_to_ascii(version_fan), width=15)
+        self.version_FAN.grid(row=5, column=2, padx=0, pady=5, sticky="w")
 
         self.version_AD1 = ttk.Label(master, text="Versão AD1:", width=15)
-        self.version_AD1.grid(row=5, column=1, padx=10, pady=5, sticky="e")
-        self.version_AD1 = ttk.Label(master, text= self.convert_to_ascii(ad_1), width=15)
-        self.version_AD1.grid(row=5, column=2, padx=10, pady=5, sticky="w")
+        self.version_AD1.grid(row=4, column=2, padx=0, pady=5, sticky="e")
+        self.version_AD1 = ttk.Label(master, text=self.convert_to_ascii(ad_1), width=15)
+        self.version_AD1.grid(row=4, column=3, padx=0, pady=5, sticky="w")
 
         self.version_AD2 = ttk.Label(master, text="Versão AD2:", width=15)
-        self.version_AD2.grid(row=5, column=3, padx=10, pady=5, sticky="e")
-        self.version_AD2 = ttk.Label(master, text= self.convert_to_ascii(ad_2), width=15)
-        self.version_AD2.grid(row=5, column=4, padx=10, pady=5, sticky="w")
+        self.version_AD2.grid(row=5, column=2, padx=0, pady=5, sticky="e")
+        self.version_AD2 = ttk.Label(master, text=self.convert_to_ascii(ad_2), width=15)
+        self.version_AD2.grid(row=5, column=3, padx=0, pady=5, sticky="w")
 
     def create_relay_buttons(self):
         for i in range(6):
@@ -159,29 +151,13 @@ class CommandInterface:
         self.code_text.delete("1.0", tk.END)
         self.code_text.insert(tk.END, code)
 
-        self.ack_text.delete("1.0", tk.END)
-        self.ack_text.insert(tk.END, ack)
+        # self.ack_text.delete("1.0", tk.END)
+        # self.ack_text.insert(tk.END, ack)
 
-    # def toggle_button(self, btn, action1, action2):
-    #     global btn_status
-    #     print(btn_status)
-    #     """Função para alternar o estado do botão."""
-    #     if btn_status == 0:
-    #         action1()
-    #         btn_status = 1
-    #         btn.config(text="Executar Ação 2", bg="blue", state="normal")
-    #     else:
-    #         action2()
-    #         btn_status = 0
-    #         btn.config(text="Executar Ação 1", bg="red", state="normal")
-    #
-    # def create_button(self, text, action1, action2, row):
-    #     global btn_status
-    #     """Função para criar um botão com ação de alternância."""
-    #     btn = tk.Button(self.relay_frame, text=text, bg="red", command=lambda: self.toggle_button(btn, action1, action2))
-    #     btn.grid(row=row, column=0, padx=10, pady=5, sticky='ew')
-    #     btn_status = 0  # Atributo personalizado para rastrear o estado
-    #     return btn
+    def webbrowser(self):
+        ip = self.get_ip_address()
+        url = 'http://192.168.' + ip[8] + '.237'
+        webbrowser.open(url)
 
     def abrir_janela_schedule(self):
         criar_janela()
@@ -233,8 +209,27 @@ class CommandInterface:
         self.code_text.delete("1.0", tk.END)
         self.code_text.insert(tk.END, code)
 
-        self.ack_text.delete("1.0", tk.END)
-        self.ack_text.insert(tk.END, ack)
+        # self.ack_text.delete("1.0", tk.END)
+        # self.ack_text.insert(tk.END, ack)
+
+    def get_ip_address(self):
+        hostname = socket.gethostname()
+        config.ip_entry = socket.gethostbyname(hostname)
+        return config.ip_entry
+
+    def process_ack(self, ack, hex_bytes):
+        ack_length = len(ack)
+        if ack[:4] == hex_bytes[:4]:
+            print(f"ACK {ack.hex()} encontrado no hex fornecido.")
+            if len(hex_bytes) >= ack_length:
+                following_bytes = hex_bytes[4:ack_length]
+                print(f"Próximos {ack_length - 4} bytes após os 4 primeiros bytes: {following_bytes.hex()}")
+                self.ack_text.delete("1.0", tk.END)
+                self.ack_text.insert(tk.END, ack.hex())
+                return 1
+            else:
+                print("Hex fornecido não possui bytes suficientes após os 4 primeiros bytes do ACK.")
+                return 0
 
     def process_hex_data(self, data):
         headers = [
@@ -296,17 +291,52 @@ class CommandInterface:
                 print('Connection address:', addr)
                 print(f"Enviando comando: {command}")
                 conn.sendall(bytes.fromhex(command))
-                data = conn.recv(2048)
-                print(f"Resposta recebida: {data.hex()}")
-                self.ack_text.delete("1.0", tk.END)
-                self.ack_text.insert(tk.END, data.hex())
+                timeout = 5  # Timeout em segundos
+                start_time = time.time()
+                attempt = 0
+                i = 0
+                while 1:
+                    data = conn.recv(2048)
+                    print(f"Resposta recebida: {data.hex()}")
+                    hex_bytes = bytes.fromhex(data.hex())
+                    for category, actions in boe.comandos.items():
+                        for subcategory, details in actions.items():
+                            for key, value in details.items():
+                                if "ACK" in value:
+                                    ack_hex = value["ACK"].replace(" ", "")
+                                    try:
+                                        ack_bytes = bytes.fromhex(ack_hex)
+                                        i = self.process_ack(ack_bytes, hex_bytes)
+                                        if i == 1:
+                                            break
+                                    except ValueError:
+                                        pass
+                                        # print(f"ACK inválido ignorado: {ack_hex}")
+                            if i == 1:
+                                break
+                        if i == 1:
+                            break
+                    if i == 1:
+                        break
+                    if time.time() - start_time > timeout:
+                        print("Timeout atingido.")
+                        attempt += 1
+                        if attempt == 5:
+                            self.ack_text.delete("1.0", tk.END)
+                            self.ack_text.insert(tk.END, "Erro ao receber ACK!")
+                            break
+                        print(f"Enviando comando: {command}")
+                        conn.sendall(bytes.fromhex(command))
+                        start_time = time.time()
+
+                # self.ack_text.delete("1.0", tk.END)
+                # self.ack_text.insert(tk.END, data.hex())
         except ValueError as e:
             print(f"Erro de conversão do comando: {e}")
         except socket.error as e:
             print(f"Erro de socket: {e}")
         except Exception as e:
             print(f"Erro inesperado: {e}")
-
 
     def get_data(self):
         global version_rmc, version_fan, ad_1, ad_2
@@ -355,17 +385,14 @@ class CommandInterface:
                     if time.time() - start_time > timeout:
                         print("Timeout atingido.")
                         break
-                self.ack_text.delete("1.0", tk.END)
-                self.ack_text.insert(tk.END, data.hex())
+                # self.ack_text.delete("1.0", tk.END)
+                # self.ack_text.insert(tk.END, data.hex())
         except ValueError as e:
             print(f"Erro de conversão do comando: {e}")
         except socket.error as e:
             print(f"Erro de socket: {e}")
         except Exception as e:
             print(f"Erro inesperado: {e}")
-
-
-
 
 if __name__ == "__main__":
     root = tk.Tk()

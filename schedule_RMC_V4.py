@@ -12,7 +12,7 @@ from datetime import datetime, time
 import config
 import socket
 import time
-from boe import brilho
+import boe
 
 
 def obter_valor_hex(valor):
@@ -24,7 +24,7 @@ def obter_valor_hex(valor):
         return format(int(valor), '02x')
 
 def send_tcp_brilho(num):
-    global send_data_value
+    global send_data_value, selected_tela
     ip = config.ip_entry.get()
     port = config.port_entry.get()
 
@@ -38,28 +38,44 @@ def send_tcp_brilho(num):
             s.listen(1)
             conn, addr = s.accept()
             print('Connection address:', addr)
-            # print(f"Conectando a {ip}:{port}")
-            # s.connect((ip, port))
 
             if num == 0: #comandos schedule
-                print(config.comando)
                 comando_bl = "ff 55 04 21 01 02 00 7c"
                 conn.sendall(bytes.fromhex(comando_bl))
                 print(f"Comando enviado: {comando_bl}")
                 time.sleep(1)
-                comando_sche = "ff 55 04 29 01 02 01 85"
-                conn.sendall(bytes.fromhex(comando_sche))
-                print(f"Comando enviado: {comando_sche}")
+                comando_schedule = "ff 55 04 29 01 02 01 85"
+                conn.sendall(bytes.fromhex(comando_schedule))
+                print(f"Comando enviado: {comando_schedule}")
                 time.sleep(1)
                 conn.sendall(bytes.fromhex(config.comando))
                 print(f"Comando enviado: {config.comando}")
             elif num == 1: #comandos brilho
-                print(send_data_value)
                 conn.sendall(bytes.fromhex(send_data_value))
                 print(f"Comando enviado: {send_data_value}")
-                # altera_texto_brilho(brilho)
 
-            data=conn.recv(2048)
+            elif num == 2:  # comando liga tela
+                if selected_tela.get() == "Tela 1":
+                    conn.sendall(bytes.fromhex(boe.comandos["Estado da Tela"]["Setting"]["Ligar a Tela 1"]["Send Data"]))
+                    print(f"Comando enviado: {boe.comandos["Estado da Tela"]["Setting"]["Ligar a Tela 1"]["Send Data"]}") #ligar tela 1
+                elif selected_tela.get() == "Tela 2":
+                    conn.sendall(bytes.fromhex(boe.comandos["Estado da Tela"]["Setting"]["Ligar a Tela 2"]["Send Data"]))
+                    print(f"Comando enviado: {boe.comandos["Estado da Tela"]["Setting"]["Ligar a Tela 2"]["Send Data"]}") #ligar tela 2
+                elif selected_tela.get() == "Telas 1 e 2":
+                    conn.sendall(bytes.fromhex(boe.comandos["Estado da Tela"]["Setting"]["Ligar a Telas 1 e 2"]["Send Data"]))
+                    print(f"Comando enviado: {boe.comandos["Estado da Tela"]["Setting"]["Ligar a Telas 1 e 2"]["Send Data"]}") #ligar tela 1 e 2
+            elif num == 3:  # comandos desliga tela
+                if selected_tela.get() == "Tela 1":
+                    conn.sendall(bytes.fromhex(boe.comandos["Estado da Tela"]["Setting"]["Desligar a Tela 1"]["Send Data"]))
+                    print(f"Comando enviado: {boe.comandos["Estado da Tela"]["Setting"]["Desligar a Tela 1"]["Send Data"]}") #ligar tela 1
+                elif selected_tela.get() == "Tela 2":
+                    conn.sendall(bytes.fromhex(boe.comandos["Estado da Tela"]["Setting"]["Desligar a Tela 2"]["Send Data"]))
+                    print(f"Comando enviado: {boe.comandos["Estado da Tela"]["Setting"]["Desligar a Tela 2"]["Send Data"]}") #ligar tela 2
+                elif selected_tela.get() == "Telas 1 e 2":
+                    conn.sendall(bytes.fromhex(boe.comandos["Estado da Tela"]["Setting"]["Desligar a Telas 1 e 2"]["Send Data"]))
+                    print(f"Comando enviado: {boe.comandos["Estado da Tela"]["Setting"]["Desligar a Telas 1 e 2"]["Send Data"]}") #ligar tela 1 e 2
+
+            data = conn.recv(2048)
             print(f"Resposta recebida: {data.hex()}")
     except ValueError as e:
         print(f"Erro de conversão do comando: {e}")
@@ -67,7 +83,6 @@ def send_tcp_brilho(num):
         print(f"Erro de socket: {e}")
     except Exception as e:
         print(f"Erro inesperado: {e}")
-
 
 def process_hex_data(data):
     header = "ff5504560101"
@@ -95,6 +110,7 @@ def process_hex_data(data):
             i += 1  # Move to the next byte if header not found
 
     return result
+
 def get_brilho():
     ip = config.ip_entry.get()
     port = config.port_entry.get()
@@ -122,12 +138,12 @@ def get_brilho():
                 for packet in result:
                     brilho = str(packet[6])
                     print(brilho)
-                    altera_texto_brilho(brilho)
-
+                    label_brilho.config(text=f"Brilho = {brilho}")
                 if time.time() - start_time > timeout:
                     print("Timeout atingido.")
                     attempt += 1
                     if attempt == 5:
+                        label_brilho.config(text=f"Brilho = ERRO!")
                         break
                     print(f"Enviando comando: FF 55 04 56 01 01 00 b0")
                     conn.sendall(bytes.fromhex("FF 55 04 56 01 01 00 b0"))
@@ -142,8 +158,11 @@ def get_brilho():
     except Exception as e:
         print(f"Erro inesperado: {e}")
 
-def altera_texto_brilho(brilho):
-    label_brilho.config(text=f"Brilho = {brilho}")
+def liga_tela():
+    send_tcp_brilho(2)
+
+def desliga_tela():
+    send_tcp_brilho(3)
 
 def criar_comando_schedule():
     global campo_comando
@@ -198,18 +217,17 @@ def update_label(value):
     """Função para atualizar o texto do label com o valor do slider e 'Send Data' do dicionário baseado no slider."""
     value = int(float(value))  # Converte o valor do slider para inteiro
     tela = selected_tela.get()  # Obtém a tela selecionada no OptionMenu
-    send_data_value = brilho.get(tela, {}).get(value, {}).get("Send Data", "Valor Desconhecido")
+    send_data_value = boe.brilho.get(tela, {}).get(value, {}).get("Send Data", "Valor Desconhecido")
+    botao_liga_tela.config(text=f"Liga a(s) {selected_tela.get()}")
+    botao_desliga_tela.config(text=f"Desliga a(s) {selected_tela.get()}")
     # label.config(text=f"Tela: {tela}, Valor do Slider: {value}, Send Data: {send_data_value}")
-    # altera_texto_brilho(value)
-    # print(tela)
-    # print(send_data_value)
 
 def criar_janela():
-    global label, selected_tela, label_brilho, horarios_entries, percentagens_entries, campo_comando, send_data_value
+    global label, selected_tela, label_brilho, horarios_entries, percentagens_entries, campo_comando, send_data_value, botao_liga_tela, botao_desliga_tela
 
     send_data_value = "ff 55 04 66 01 01 0a ca"
     janela = tk.Tk()
-    janela.title("Configuração de Brilho")
+    janela.title("Configuração de Brilho V4.0")
 
     style = ttk.Style()
     style.theme_use("clam")
@@ -239,7 +257,7 @@ def criar_janela():
     botao_criar_comando.grid(row=10, columnspan=4, pady=10)
 
     botao_get_brilho = tk.Button(janela, text="Get Brilho", command=get_brilho)
-    botao_get_brilho.grid(row=10,column = 2, columnspan=4, pady=10)
+    botao_get_brilho.grid(row=10, column=2, columnspan=4, pady=10)
 
     tk.Label(janela, text="Comando Gerado:").grid(row=7, column=0, padx=5, pady=5)
     campo_comando = tk.Text(janela, height=1, width=80)  # Ajuste a largura conforme necessário
@@ -256,22 +274,23 @@ def criar_janela():
          frame,
          selected_tela,
          "Tela 1",
-         *brilho.keys(),
+         *boe.brilho.keys(),
          command=lambda _: update_label(slider.get())
          )
     option_menu.grid(row=10, column=1, pady=20)
     tk.Label(janela, text="Tela:").grid(row=10, column=0, columnspan=2, padx=(0, 30))
-    # print(*brilho.keys())
+
+    botao_liga_tela = tk.Button(janela, text=f"Liga a(s) {selected_tela.get()}", command=liga_tela, width=40)
+    botao_liga_tela.grid(row=11, column=0, columnspan=2, pady=10)
+
+    botao_desliga_tela = tk.Button(janela, text=f"Desliga a(s) {selected_tela.get()}", command=desliga_tela, width=40)
+    botao_desliga_tela.grid(row=11, column=2, columnspan=2, pady=10)
 
     slider = tk.Scale(janela, from_=10, to=100, orient="horizontal", command=update_label, length=600, tickinterval=10, resolution=10)
     slider.grid(row=9, column=0, columnspan=4, padx=0, pady=10)
-    # label = tk.Label(janela, text="Tela: Tela 1, Valor do Slider: 10, Send Data: ff 55 04 66 01 01 0a ca")
-    # label.grid(column=0, columnspan=4, padx=20, pady=20)
 
     label_brilho = tk.Label(janela, text="Brilho = ??")
     label_brilho.grid(row=10, column=3, columnspan=4, padx=20, pady=20)
-
-    # get_brilho()
 
     janela.mainloop()
 
