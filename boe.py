@@ -1,39 +1,36 @@
 comandos = {
     "Estado da Tela": {
         "Reading": {
-            "Tela 1": {
+            "Tela 1 ON ": {
                 "Send Data": "ff 55 04 39 01 01 00 93",
-                "ACK": "ff 55 06 39 01 01 00 00 00 3b",
-                "Lenght": 10,
-                "Header": "ff 55 06 39",
-                "Display1": 5,
-                "Display2": 6,
-                "Estado": 7,
-                "Zeros": "00 00",
-                "CheckSum": "3B"
+                "ACK": "ff 55 06 39 01 01 00 00 00 3b"
             },
-            "Tela 2": {
+            "Tela 2 ON": {
                 "Send Data": "ff 55 04 39 02 02 00 95",
-                "ACK": "ff 55 06 39 01 01 00 00 00 3b",
-                "Lenght": 10,
-                "Header": "ff 55 06 39",
-                "Display1": "02",
-                "Display2": "02",
-                "Estado": "00",
-                "Zeros": "00 00",
-                "CheckSum": "3B"
+                "ACK": "ff 55 06 39 01 01 00 00 00 3b"
             },
-            "Tela 1 e 2": {
+            "Tela 1 e 2 ON ": {
                 "Send Data": "ff 55 04 39 01 02 00 94",
-                "ACK": "ff 55 06 39 01 01 00 00 00 3b",
-                "Lenght": 10,
-                "Header": "ff 55 06 39",
-                "Display1": "01",
-                "Display2": "02",
-                "Estado": "00",
-                "Zeros": "00 00",
-                "CheckSum": "3B"
+                "ACK": "ff 55 06 39 01 01 00 00 00 3b"
             },
+
+            "Tela 1 OFF" : {
+                "Send Data": "ff 55 04 39 01 01 00 93",
+                "ACK": "ff 55 06 39 01 01 01 00 00 3b"
+            },
+
+            "Tela 2 OFF": {
+                "Send Data": "ff 55 04 39 02 02 00 95",
+                "ACK": "ff 55 06 39 01 01 00 00 00 3b"
+            },
+
+
+            "Tela 1 e 2  OFF": {
+                "Send Data": "ff 55 04 39 01 02 00 94",
+                "ACK": "ff 55 06 39 01 01 00 00 00 3b"
+            },
+
+
         },
         "Setting": {
             "Desligar a Tela 1": {
@@ -66,16 +63,17 @@ comandos = {
         "Reading": {
             "Tela 1": {
                 "Send Data": "FF 55 04 42 01 01 00 9c",
-                "ACK": "ff 55 04 42 01 01 02 9e"
+                "ACK": "ff 55 04 42 01 01 03 9f"
             },
             "Tela 2": {
                 "Send Data": "ff 55 04 42 02 02 00 9e",
-                "ACK": "ff 55 04 42 02 02 03 a1"
+                "ACK": "ff 55 04 42 02 02 02 a0"
             },
             "Tela 1 e 2": {
                 "Send Data": "ff 55 04 42 01 02 00 9d",
-                "ACK": "ff 55 04 42 01 01 02 9e"
+                "ACK": "ff 55 04 42 01 01 03 9f"
             },
+
         },
         "Setting": {
             "Tela 1 HDMI 1": {
@@ -102,31 +100,41 @@ comandos = {
                 "Send Data": "FF 55 04 82 02 02 01 df",
                 "ACK": "ff 55 04 82 00 00 00 da"
             },
+
         }
     },
     "Input Signal Status": {
         "Reading": {
-            "Tela 1": {
-                "Send Data": "FF 55 04 57 01 01 00 b1",
+            "Tela 1 on": {
+                "Send Data": "ff 55 04 57 01 01 00 b1",
+                "ACK": "ff 55 04 57 01 01 01 b2"
+            },
+
+            "Tela 1 off": {
+                "Send Data": "ff 55 04 57 01 01 00 b1",
                 "ACK": "ff 55 04 57 01 01 00 b1"
             },
-            "Tela 2": {
+            "Tela 2 on": {
                 "Send Data": "FF 55 04 57 02 02 00 b3",
-                "ACK": "Sem resposta"
+                "ACK": "ff 55 04 57 02 02 01 b4"
             },
-            "Tela 1 e 2": {
+
+            "Tela 2 off": {
+                "Send Data": "FF 55 04 57 02 02 00 b3",
+                "ACK": "ff 55 04 57 02 02 00 b3"
+            },
+
+
+            "Tela 1 e 2 on": {
                 "Send Data": "FF 55 04 57 01 02 00 b2",
                 "ACK": "ff 55 04 57 01 01 01 b2"
             },
 
-            # "HDMI 2 OFF": {
-            #     "Send Data": "FF 55 04 57 02 02 00 b3",
-            #     "ACK": "Sem resposta"
-            # },
-            # "HDMI 1 / 2 OFF": {
-            #     "Send Data": "FF 55 04 57 01 02 00 b2",
-            #     "ACK": "ff 55 04 57 01 01 01 b2"
-            # }
+            "Tela 1 e 2 off": {
+                "Send Data": "FF 55 04 57 01 02 00 b2",
+                "ACK": "ff 55 04 57 01 01 00 b1"
+            },
+
         }
     },
     "Brightness": {
@@ -143,6 +151,7 @@ comandos = {
                 "Send Data": "FF 55 04 40 01 02 00 9b",
                 "ACK": "FF 55 04 40 01 01 33 cd"
             },
+
         },
         "Setting": {
             "Tela 2": {
@@ -173,6 +182,7 @@ comandos = {
                 "Send Data": "ff 55 04 56 01 02 0a bb",
                 "ACK": "ff 55 04 56 01 01 64 14"
             },
+
         },
         "Setting": {
             "Tela 1": {
@@ -199,6 +209,7 @@ comandos = {
                 'Send Data': 'ff 55 04 ad 01 00 00 06',
                 'ACK': 'ACK for Relay - 1 OFF'
             },
+
             'Relay - 2 OFF': {
                 'Send Data': 'ff 55 04 ad 02 00 00 07',
                 'ACK': 'ACK for Relay - 2 OFF'
@@ -240,7 +251,7 @@ comandos = {
                 'ACK': 'ACK for Relay - 5 ON'
             }
         }
-    },
+    }
 }
 
 brilho = {
