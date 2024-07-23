@@ -12,14 +12,16 @@ import socket
 import boe
 import threading
 import time
-from schedule_RMC_V4 import criar_janela
+from schedule_RMC_V4_1 import criar_janela
+from info_V1_0 import criar_janela_info
 import config
 import webbrowser
+import struct
 
 class CommandInterface:
     def __init__(self, master):
         self.master = master
-        master.title("Interface de Comandos BOE V6.1")
+        master.title("Interface de Comandos BOE V6.2")
         master.geometry("1260x700")
 
         # Configure estilos e layouts
@@ -63,7 +65,7 @@ class CommandInterface:
         self.command_menu.grid(row=1, column=0, columnspan=2, padx=5, pady=10, sticky='ew')
         self.command_menu.bind('<<ComboboxSelected>>', self.update_display)
 
-        self.code_frame = ttk.LabelFrame(master, text="Comando", padding=10, style="Rounded.TFrame", height=100)
+        self.code_frame = ttk.LabelFrame(master, text="Comando", padding=10, style="Rounded.TFrame", height=200)
         self.code_frame.grid(row=2, column=0, columnspan=3, padx=10, pady=5, sticky="nsew")
 
         self.code_text = tk.Text(self.code_frame, height=3, width=50, font=("Helvetica", 12), bg="#f0f0f0", relief="solid", borderwidth=1)
@@ -79,10 +81,13 @@ class CommandInterface:
         self.relay_frame.grid(row=0, column=2, padx=10, pady=10, sticky="ne")
 
         self.schedule_button = ttk.Button(master, text="Configurar Brilho", command=self.abrir_janela_schedule)
-        self.schedule_button.grid(row=0, column=0, columnspan=1, pady=10)
+        self.schedule_button.grid(row=0, column=1, pady=(140, 0), padx=(0, 285))
 
         self.web_button = ttk.Button(master, text="Web Browser", command=self.webbrowser)
-        self.web_button.grid(row=0, column=1, columnspan=1, pady=140, padx=0)
+        self.web_button.grid(row=0, column=1, pady=(140, 0), padx=(0, 0))
+
+        self.web_button = ttk.Button(master, text="Medições", command=self.abrir_janela_info)
+        self.web_button.grid(row=0, column=1, pady=(140, 0), padx=(270, 0))
 
         self.create_relay_buttons()
         self.relay_status = {i: "OFF" for i in range(6)}
@@ -133,7 +138,7 @@ class CommandInterface:
         self.version_AD2.grid(row=5, column=3, padx=0, pady=5, sticky="w")
 
     def create_relay_buttons(self):
-        for i in range(6):
+        for i in range(2):
             on_button = ttk.Button(self.relay_frame, text=f"Relay {i} ON", width=15, command=lambda i=i: self.send_relay_command(i, True))
             on_button.grid(row=i, column=0, padx=5, pady=2, sticky="ew")
 
@@ -161,6 +166,11 @@ class CommandInterface:
 
     def abrir_janela_schedule(self):
         criar_janela()
+
+    def abrir_janela_info(self):
+        if config.voltage is None and config.v24 is None:
+            self.get_data()
+        criar_janela_info()
 
     def show_setting_commands(self):
         self.command_type_label.config(text="Tipo de Comando: Configuração")
@@ -214,17 +224,17 @@ class CommandInterface:
 
     def get_ip_address(self):
         hostname = socket.gethostname()
-        config.ip_entry = socket.gethostbyname(hostname)
-        return config.ip_entry
+        ip_entry = socket.gethostbyname(hostname)
+        return ip_entry
 
-    def process_ack(self, ack, hex_bytes, category, subcategory, key):
+    def process_ack(self, ack, hex_bytes, category, subcategory, key, actions):
         ack_length = len(ack)
         if ack[:4] == hex_bytes[:4]:
             print(f"ACK {ack.hex()} encontrado no hex fornecido.")
             if len(hex_bytes) >= ack_length:
                 following_bytes = hex_bytes[4:ack_length]
                 print(f"Próximos {ack_length - 4} bytes após os 4 primeiros bytes: {following_bytes.hex()}")
-                self.tratar_ACK(ack, category, subcategory, key)
+                # self.tratar_ACK(hex_bytes[:ack_length], category, subcategory, key, actions)
                 self.ack_text.delete("1.0", tk.END)
                 self.ack_text.insert(tk.END, ack.hex())
                 return 1
@@ -232,18 +242,21 @@ class CommandInterface:
                 print("Hex fornecido não possui bytes suficientes após os 4 primeiros bytes do ACK.")
                 return 0
 
-    def tratar_ACK(self, ack, category, subcategory, key):
-        # print(boe.comandos[category][subcategory][key]["ACK"])
-        display1 = bytes.fromhex(boe.comandos[category][subcategory][key]["ACK"])
-        print(display1[5])
-        # pass
-        # print(ack)
+    def tratar_ACK(self, ack, category, subcategory, key, actions):
+
+        if ack[:4] == bytes.fromhex(boe.comandos[category][subcategory][key]["Header"]):
+            print(ack[4])
+            print(ack[5])
+            print(ack[6])
 
     def process_hex_data(self, data):
         headers = [
             ("a1a2a3200011", [6, 5, 5]),  # Header, Lixo, version_rmc
             ("a1a2a3200013", [6, 9, 13]),  # Header, Lixo, version_fan
-            ("a1a2a31b0014", [6, 4, 5, 4])  # Header, ad_1, Lixo, ad_2
+            ("a1a2a31b0014", [6, 4, 5, 4]),  # Header, ad_1, Lixo, ad_2
+            ("a1a2a31a000a", [6, 2, 4, 1, 4, 1, 4]),  # Header, Lixo, 12V 1, lixo, 12V 2, lixo, 24V
+            ("a1a2a329000d", [6, 2, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4]),  # Header, lixo, Voltage, Lixo, Current, lixo, consumo, lixo, frequencia, lixo, potencia efetiva, lixo, potencia reativa
+
         ]
 
         result = []
@@ -287,6 +300,8 @@ class CommandInterface:
         ip = config.ip_entry.get()
         port = config.port_entry.get()
         command = self.code_text.get("1.0", tk.END).strip()
+        timeout_socket = 25  # Timeout em segundos
+        start_time_socket = time.time()
         if not ip or not port or not command:
             print("IP, Porta ou Comando não fornecido.")
             return
@@ -314,7 +329,7 @@ class CommandInterface:
                                     ack_hex = value["ACK"].replace(" ", "")
                                     try:
                                         ack_bytes = bytes.fromhex(ack_hex)
-                                        i = self.process_ack(ack_bytes, hex_bytes, category, subcategory, key)
+                                        i = self.process_ack(ack_bytes, hex_bytes, category, subcategory, key, actions)
                                         if i == 1:
                                             break
                                     except ValueError:
@@ -345,6 +360,8 @@ class CommandInterface:
             print(f"Erro de socket: {e}")
         except Exception as e:
             print(f"Erro inesperado: {e}")
+        except time.time() - start_time_socket > timeout_socket:
+            print("Timeout Socket!")
 
     def get_data(self):
         global version_rmc, version_fan, ad_1, ad_2
@@ -359,7 +376,7 @@ class CommandInterface:
                 s.bind((ip, port))
                 s.listen(1)
                 conn, addr = s.accept()
-                i1, i2, i3 = 0, 0, 0
+                i1, i2, i3, i4, i5 = 0, 0, 0, 0, 0
                 timeout = 5  # Timeout em segundos
                 start_time = time.time()
                 while 1:
@@ -387,14 +404,38 @@ class CommandInterface:
                             self.version_AD1.config(text=self.convert_to_ascii(ad_1))
                             self.version_AD2.config(text=self.convert_to_ascii(ad_2))
                             i3 = 1
+                        elif header == "a1a2a31a000a":
+                            header,lixo, v12_1, lixo, v12_2, lixo, v24 = packets
+                            print("header: ", header.hex())
+                            print("12V_1: ", struct.unpack('<f', v12_1)[0])
+                            print("12V_2: ", struct.unpack('<f', v12_2)[0])
+                            print("24V: ", struct.unpack('<f', v24)[0])
+                            config.v12_1 = struct.unpack('<f', v12_1)[0]
+                            config.v12_2 = struct.unpack('<f', v12_2)[0]
+                            config.v24 = struct.unpack('<f', v24)[0]
+                            i4 = 1
+                        elif header == "a1a2a329000d":
+                            header, lixo, voltage, lixo, current, lixo, energy, lixo, frequencia, lixo, potencia_efetiva, lixo, potencia_reativa = packets
+                            print("header: ", header.hex())
+                            print("Voltage: ", struct.unpack('<f', voltage)[0])
+                            print("Current: ", struct.unpack('<f', current)[0])
+                            print("Consumo: ", struct.unpack('<f', energy)[0])
+                            print("frequencia: ", struct.unpack('<f', frequencia)[0])
+                            print("Potencia efetiva: ", struct.unpack('<f', potencia_efetiva)[0])
+                            print("Potencia reativa: ", struct.unpack('<f', potencia_reativa)[0])
+                            config.voltage = struct.unpack('<f', voltage)[0]
+                            config.current = struct.unpack('<f', current)[0]
+                            config.energy = struct.unpack('<f', energy)[0]
+                            config.frequencia = struct.unpack('<f', frequencia)[0]
+                            config.potencia_efetiva = struct.unpack('<f', potencia_efetiva)[0]
+                            config.potencia_reativa = struct.unpack('<f', potencia_reativa)[0]
+                            i5 = 1
                         print()
-                    if i1 == 1 and i2 == 1 and i3 == 1:
+                    if i1 == 1 and i2 == 1 and i3 == 1 and i4 == 1 and i5 == 1:
                         break
                     if time.time() - start_time > timeout:
                         print("Timeout atingido.")
                         break
-                # self.ack_text.delete("1.0", tk.END)
-                # self.ack_text.insert(tk.END, data.hex())
         except ValueError as e:
             print(f"Erro de conversão do comando: {e}")
         except socket.error as e:
